@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- [Java](https://jdk.java.net/25/) - **The JVM must be installed, At least Java 21**
+- [Java](https://jdk.java.net/25/) - **The JVM must be installed, at least Java 21**
 
 ## Instructions
 
