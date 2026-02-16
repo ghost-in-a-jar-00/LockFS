@@ -8,6 +8,7 @@ import lib.SecureTools;
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.*;
+import java.util.stream.Stream;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -27,21 +28,22 @@ public class Lock{
         
         Path cwdEncrypt = Paths.get(dirPath);
         
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(cwdEncrypt)) {
-            for (Path file : stream) {
+        try (Stream<Path> paths = Files.walk(cwdEncrypt)) {
+            paths
+            .filter(Files::isRegularFile)
+            .filter(filePath -> !filePath.toString().endsWith(ENC_EXT))
+            .forEach(file -> {
                 String randName = SecureTools.genRand(FILENAME_LEN);
                 String newFilename = randName + ENC_EXT;
-                
                 Path outPath = Paths.get(ENC_DIR_NAME, newFilename);
-            
-                if (Files.isRegularFile(file) && !file.toString().endsWith(ENC_EXT)){
-                    try{
-                        SecureTools.encryptFile(file.toString(), outPath.toString(), password);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+
+                try{
+                    SecureTools.encryptFile(cwdEncrypt, file.toString(), outPath.toString(), password);
+                }catch (Exception e){
+                    e.printStackTrace();
                 }
-            }
+            });
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
