@@ -84,9 +84,9 @@ public class SecureTools{
                 fos.write(salt);
                 fos.write(iv);
                 
-                fos.write((pathBytes.length >> 8) & 0xFF);
-                fos.write(pathBytes.length & 0xFF);
-                fos.write(pathBytes);
+                cos.write((pathBytes.length >> 8) & 0xFF);
+                cos.write(pathBytes.length & 0xFF);
+                cos.write(pathBytes);
              
                 byte[] buffer = new byte[CHUNK_SIZE];
                 int bytesRead;
@@ -111,23 +111,6 @@ public class SecureTools{
                 throw new IOException("Unable to read IV from file");
             }
             
-            int nameLenHigh = fis.read();
-            int nameLenLow = fis.read();
-            if (nameLenHigh == -1 || nameLenLow == -1) {
-                throw new IOException("Unable to read file path length");
-            }
-            int pathLength = (nameLenHigh << 8) | nameLenLow;
-            
-            byte[] pathBytes = new byte[pathLength];
-            if (fis.read(pathBytes) != pathLength) {
-                throw new IOException("Unable to read file path bytes");
-            }
-            String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
-            
-            Path outputFile = Paths.get(outputPath, originalPath);
-            
-            Files.createDirectories(outputFile.getParent());
-            
             PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
             erasePassword(passwordArray);
             
@@ -139,14 +122,39 @@ public class SecureTools{
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
             
-            try (CipherInputStream cis = new CipherInputStream(fis, cipher);
-                 FileOutputStream fos = new FileOutputStream(outputFile.toString())) {
-                    byte[] buffer = new byte[CHUNK_SIZE];
-                    int bytesRead;
-                    while ((bytesRead = cis.read(buffer)) != -1) {
-                        fos.write(buffer, 0, bytesRead);
+            try (CipherInputStream cis = new CipherInputStream(fis, cipher)){
+                    int nameLenHigh = cis.read();
+                    int nameLenLow = cis.read();
+                    if (nameLenHigh == -1 || nameLenLow == -1) {
+                        throw new IOException("Unable to read file path length");
                     }
-                    eraseBytes(buffer);
+                    int pathLength = (nameLenHigh << 8) | nameLenLow;
+            
+                    byte[] pathBytes = new byte[pathLength];
+                    
+                    int totalRead = 0;
+                    while (totalRead < pathLength) {
+                        int read = cis.read(pathBytes, totalRead, pathLength - totalRead);
+                        if (read == -1) {
+                            throw new IOException("Unable to read full path bytes");
+                        }
+                        totalRead += read;
+                    }
+                    
+                    String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
+            
+                    Path outputFile = Paths.get(outputPath, originalPath);
+            
+                    Files.createDirectories(outputFile.getParent());
+                 
+                    try(FileOutputStream fos = new FileOutputStream(outputFile.toString())){
+                        byte[] buffer = new byte[CHUNK_SIZE];
+                        int bytesRead;
+                        while ((bytesRead = cis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                        }
+                        eraseBytes(buffer);
+                    }
              }
              spec.clearPassword();
         }
