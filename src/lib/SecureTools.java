@@ -16,6 +16,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import java.util.Arrays;
 import java.security.SecureRandom;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,7 @@ public class SecureTools{
     private static final int TAG_LENGTH = 128;
     private static final int CHUNK_SIZE = 4096;
     
-    public static void encryptFile(String inputFile, String outputFile, char[] passwordArray) throws Exception{
+    public static void encryptFile(Path cwdEncrypt, String inputFile, String outputFile, char[] passwordArray) throws Exception{
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
@@ -70,9 +71,11 @@ public class SecureTools{
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
         
-        String originalFilename = new File(inputFile).getName();
-        byte[] filenameBytes = originalFilename.getBytes(StandardCharsets.UTF_8);
-        if (filenameBytes.length > 65535) throw new IllegalArgumentException("Filename too long");
+        Path inputPath = Paths.get(inputFile);
+        Path relativePath = cwdEncrypt.relativize(inputPath);
+        String filePath = relativePath.toString();
+        byte[] pathBytes = filePath.getBytes(StandardCharsets.UTF_8);
+        if (pathBytes.length > 65535) throw new IllegalArgumentException("File path too long");
         
         try (FileOutputStream fos = new FileOutputStream(outputFile);
              CipherOutputStream cos = new CipherOutputStream(fos, cipher);
@@ -81,9 +84,9 @@ public class SecureTools{
                 fos.write(salt);
                 fos.write(iv);
                 
-                fos.write((filenameBytes.length >> 8) & 0xFF);
-                fos.write(filenameBytes.length & 0xFF);
-                fos.write(filenameBytes);
+                cos.write((pathBytes.length >> 8) & 0xFF);
+                cos.write(pathBytes.length & 0xFF);
+                cos.write(pathBytes);
              
                 byte[] buffer = new byte[CHUNK_SIZE];
                 int bytesRead;
@@ -108,21 +111,6 @@ public class SecureTools{
                 throw new IOException("Unable to read IV from file");
             }
             
-            int nameLenHigh = fis.read();
-            int nameLenLow = fis.read();
-            if (nameLenHigh == -1 || nameLenLow == -1) {
-                throw new IOException("Unable to read filename length");
-            }
-            int filenameLength = (nameLenHigh << 8) | nameLenLow;
-            
-            byte[] filenameBytes = new byte[filenameLength];
-            if (fis.read(filenameBytes) != filenameLength) {
-                throw new IOException("Unable to read filename bytes");
-            }
-            String originalFilename = new String(filenameBytes, StandardCharsets.UTF_8);
-            
-            Path outputFile = Paths.get(outputPath, originalFilename);
-            
             PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
             erasePassword(passwordArray);
             
@@ -134,14 +122,39 @@ public class SecureTools{
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
             
-            try (CipherInputStream cis = new CipherInputStream(fis, cipher);
-                 FileOutputStream fos = new FileOutputStream(outputFile.toString())) {
-                    byte[] buffer = new byte[CHUNK_SIZE];
-                    int bytesRead;
-                    while ((bytesRead = cis.read(buffer)) != -1) {
-                        fos.write(buffer, 0, bytesRead);
+            try (CipherInputStream cis = new CipherInputStream(fis, cipher)){
+                    int nameLenHigh = cis.read();
+                    int nameLenLow = cis.read();
+                    if (nameLenHigh == -1 || nameLenLow == -1) {
+                        throw new IOException("Unable to read file path length");
                     }
-                    eraseBytes(buffer);
+                    int pathLength = (nameLenHigh << 8) | nameLenLow;
+            
+                    byte[] pathBytes = new byte[pathLength];
+                    
+                    int totalRead = 0;
+                    while (totalRead < pathLength) {
+                        int read = cis.read(pathBytes, totalRead, pathLength - totalRead);
+                        if (read == -1) {
+                            throw new IOException("Unable to read full path bytes");
+                        }
+                        totalRead += read;
+                    }
+                    
+                    String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
+            
+                    Path outputFile = Paths.get(outputPath, originalPath);
+            
+                    Files.createDirectories(outputFile.getParent());
+                 
+                    try(FileOutputStream fos = new FileOutputStream(outputFile.toString())){
+                        byte[] buffer = new byte[CHUNK_SIZE];
+                        int bytesRead;
+                        while ((bytesRead = cis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                        }
+                        eraseBytes(buffer);
+                    }
              }
              spec.clearPassword();
         }
