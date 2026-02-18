@@ -8,8 +8,60 @@ import java.util.function.Consumer;
 import java.awt.*;
 import java.io.File;
 import java.util.Arrays;
+import java.awt.Font;
 
 public class GuiTools{
+    private static final String FONT_STYLE_TEXT = "Arial";
+    private static final int FONT_SIZE_TEXT = 15;
+
+    public static void showText(String text){
+        JFrame frame = new JFrame();
+        frame.setSize(500, 400);
+        frame.setAlwaysOnTop(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        
+        JLabel label = new JLabel(text);
+        label.setFont(new Font(FONT_STYLE_TEXT, Font.PLAIN, FONT_SIZE_TEXT));
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+        label.setVerticalAlignment(SwingConstants.CENTER);
+        
+        frame.add(label);
+        frame.setVisible(true);
+    }
+
+    public static char[] getText(String title, String purpose){
+        JFrame frame = new JFrame();
+        frame.setAlwaysOnTop(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        
+        JPanel panel = new JPanel(new GridLayout(1, 1, 5, 5));
+        JTextField textField = new JTextField();
+        
+        panel.add(new JLabel(purpose));
+        panel.add(textField);
+        
+        JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+        wrapper.add(panel);
+        
+        String[] options = {"Submit"};
+        
+        
+        int result = JOptionPane.showOptionDialog(frame, wrapper, title,
+                                                  JOptionPane.DEFAULT_OPTION,
+                                                  JOptionPane.PLAIN_MESSAGE,
+                                                  null, options, options[0]);
+                                                      
+        if (result != 0) {
+            frame.dispose();
+            return new char[0];
+        }
+            
+        return textField.getText().toCharArray();
+    }
+
     public static char[] getPassword(){
         JFrame frame = new JFrame();
         frame.setAlwaysOnTop(true);

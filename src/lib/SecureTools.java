@@ -19,6 +19,7 @@ import java.security.SecureRandom;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 
@@ -158,5 +159,60 @@ public class SecureTools{
              }
              spec.clearPassword();
         }
+    }
+    
+    public static byte[] encryptIO(byte[] data, char[] passwordArray) throws Exception{
+        byte[] salt = new byte[SALT_LENGTH];
+        new SecureRandom().nextBytes(salt);
+        
+        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
+        erasePassword(passwordArray);
+        
+        
+        byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
+        spec.clearPassword();
+        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        eraseBytes(keyBytes);
+            
+        byte[] iv = new byte[IV_LENGTH];
+        new SecureRandom().nextBytes(iv);
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
+        
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
+        
+        byte[] encData = cipher.doFinal(data);
+        
+        ByteBuffer buffer = ByteBuffer.allocate(salt.length + iv.length + encData.length);
+        buffer.put(salt);
+        buffer.put(iv);
+        buffer.put(encData);
+        return buffer.array();
+    }
+    
+    public static byte[] decryptIO(byte[] encData, char[] passwordArray) throws Exception{
+        ByteBuffer buffer = ByteBuffer.wrap(encData);
+        
+        byte[] salt = new byte[SALT_LENGTH];
+        buffer.get(salt);
+        
+        byte[] iv = new byte[IV_LENGTH];
+        buffer.get(iv);
+        
+        byte[] ciphertext = new byte[buffer.remaining()];
+        buffer.get(ciphertext);
+        
+        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
+        erasePassword(passwordArray);
+        
+        byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
+        spec.clearPassword();
+        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        eraseBytes(keyBytes);
+            
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
+        return cipher.doFinal(ciphertext);
     }
 }
