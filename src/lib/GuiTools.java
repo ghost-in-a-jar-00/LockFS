@@ -61,6 +61,58 @@ public class GuiTools{
             
         return textField.getText().toCharArray();
     }
+    
+    public static char[] getDecrypt(){
+        JFrame frame = new JFrame();
+        frame.setAlwaysOnTop(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+    
+        JPanel panel = new JPanel(new GridLayout(1, 2, 5, 5));
+        JPasswordField passField = new JPasswordField(10);
+        JCheckBox showPassword = new JCheckBox("Show Password");
+        
+        panel.add(new JLabel("Password:"));
+        panel.add(passField);
+        
+        JPanel wrapper = new JPanel();
+        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
+        wrapper.add(panel);
+        wrapper.add(Box.createRigidArea(new Dimension(0, 10)));
+        showPassword.setAlignmentX(Component.CENTER_ALIGNMENT);
+        wrapper.add(showPassword);
+        
+        showPassword.addActionListener(e -> {
+            if (showPassword.isSelected()) {
+                passField.setEchoChar((char) 0);
+            } else {
+                passField.setEchoChar('*');
+            }
+        });
+        
+        String[] options = {"Submit", "Cancel"};
+        
+        while (true) {
+            int result = JOptionPane.showOptionDialog(frame, wrapper, "Set Password",
+                                                      JOptionPane.DEFAULT_OPTION,
+                                                      JOptionPane.PLAIN_MESSAGE,
+                                                      null, options, options[0]);
+                                                      
+            if (result != 0) {
+                frame.dispose();
+                return new char[0];
+            }
+            
+            char[] password = passField.getPassword();
+            
+            if (password.length == 0) {
+                JOptionPane.showMessageDialog(frame, "Please fill in the field!", "Warning", JOptionPane.WARNING_MESSAGE);
+                continue;
+            }
+            
+            return password;
+        }
+    }
 
     public static char[] getPassword(){
         JFrame frame = new JFrame();
