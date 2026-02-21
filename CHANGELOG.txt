@@ -10,3 +10,13 @@
 - Added optional tools
   - genvault (Allows user to generate a vault with obfuscated name)
   - reveal (Allows user to view the name of the vault)
+  
+---
+1.0.0-dev.2
+
+- GuiTools
+  - Added one field only password field for decryption
+- SecureTools
+  - Overhaul encryption and decryption of files
+    - Issues related to large file handling with previous implementation
+  - Iteration value modified, increased

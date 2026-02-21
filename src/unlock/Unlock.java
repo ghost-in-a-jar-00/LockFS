@@ -77,7 +77,7 @@ public class Unlock{
     }
     
     public static void main (String[] args){
-        char[] password = GuiTools.getPassword();
+        char[] password = GuiTools.getDecrypt();
         
         if (password.length == 0){
             System.exit(0);

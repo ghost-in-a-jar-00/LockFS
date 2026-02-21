@@ -21,7 +21,7 @@ public class RevealName{
     }
 
     public static void main(String[] args) throws Exception{
-        char[] password = GuiTools.getPassword();
+        char[] password = GuiTools.getDecrypt();
         
         String dirTask = "Choose Vault";
         String vaultDB = GuiTools.selectDir(dirTask);

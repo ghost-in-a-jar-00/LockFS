@@ -5,9 +5,10 @@
 package lib;
 
 import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
+import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -49,115 +50,108 @@ public class SecureTools{
     
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
-    private static final int ITERATIONS = 65536;
+    private static final int ITERATIONS = 100000;
     private static final int KEY_SIZE = 256;
     private static final int TAG_LENGTH = 128;
     private static final int CHUNK_SIZE = 4096;
     
     public static void encryptFile(Path cwdEncrypt, String inputFile, String outputFile, char[] passwordArray) throws Exception{
+        Path inputPath = Paths.get(inputFile);
+        Path relativePath = cwdEncrypt.relativize(inputPath);
+        String filePath = relativePath.toString();
+        byte[] pathBytes = filePath.getBytes(StandardCharsets.UTF_8);
+        
+        if (pathBytes.length > 65535) {
+            throw new IllegalArgumentException("Path too long for 2-byte length");
+        }
+        
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
         PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
         erasePassword(passwordArray);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+        spec.clearPassword();
         
-        byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
-        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-        eraseBytes(keyBytes);
-        
-        byte[] iv = new byte[IV_LENGTH];
-        new SecureRandom().nextBytes(iv);
-        GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
-        
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
-        
-        Path inputPath = Paths.get(inputFile);
-        Path relativePath = cwdEncrypt.relativize(inputPath);
-        String filePath = relativePath.toString();
-        byte[] pathBytes = filePath.getBytes(StandardCharsets.UTF_8);
-        if (pathBytes.length > 65535) throw new IllegalArgumentException("File path too long");
-        
-        try (FileOutputStream fos = new FileOutputStream(outputFile);
-             CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-             FileInputStream fis = new FileInputStream(inputFile)) {
+        try (FileInputStream fis = new FileInputStream(inputFile);
+             FileOutputStream fos = new FileOutputStream(outputFile)){
              
                 fos.write(salt);
-                fos.write(iv);
-                
-                cos.write((pathBytes.length >> 8) & 0xFF);
-                cos.write(pathBytes.length & 0xFF);
-                cos.write(pathBytes);
              
+                fos.write((pathBytes.length >> 8) & 0xFF);
+                fos.write(pathBytes.length & 0xFF);
+                fos.write(pathBytes);
+                
                 byte[] buffer = new byte[CHUNK_SIZE];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    cos.write(buffer, 0, bytesRead);
-                }
+                int read;
+                
+                while ((read = fis.read(buffer)) != -1) {
+                    byte[] iv = new byte[IV_LENGTH];
+                    new SecureRandom().nextBytes(iv);
+                    fos.write(iv);
+                    
+                    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                    cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
+                    
+                    byte[] encryptedChunk = cipher.doFinal(buffer, 0, read);
+                    fos.write(encryptedChunk);
+                }                
                 eraseBytes(buffer);
-            }
-        spec.clearPassword();
+             }
     }
     
     public static void decryptFile(String inputFile, String outputPath, char[] passwordArray) throws Exception{
-        try (FileInputStream fis = new FileInputStream(inputFile)) {
-        
-            byte[] salt = new byte[SALT_LENGTH];
-            if (fis.read(salt) != SALT_LENGTH) {
-                throw new IOException("Unable to read salt from file");
-            }
-            
-            byte[] iv = new byte[IV_LENGTH];
-            if (fis.read(iv) != IV_LENGTH) {
-                throw new IOException("Unable to read IV from file");
-            }
-            
-            PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-            erasePassword(passwordArray);
-            
-            byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
-            SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-            eraseBytes(keyBytes);
-                                                  
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
-            
-            try (CipherInputStream cis = new CipherInputStream(fis, cipher)){
-                    int nameLenHigh = cis.read();
-                    int nameLenLow = cis.read();
-                    if (nameLenHigh == -1 || nameLenLow == -1) {
-                        throw new IOException("Unable to read file path length");
-                    }
-                    int pathLength = (nameLenHigh << 8) | nameLenLow;
-            
-                    byte[] pathBytes = new byte[pathLength];
+        try (FileInputStream fis = new FileInputStream(inputFile)){
+             
+                byte[] salt = new byte[SALT_LENGTH];
+                fis.readNBytes(salt, 0, SALT_LENGTH);
+                
+                int highByte = fis.read();
+                int lowByte = fis.read();
+                if (highByte == -1 || lowByte == -1) {
+                    throw new IOException("Unexpected EOF while reading path length");
+                }
+                int pathLength = (highByte << 8) | lowByte;
+                byte[] pathBytes = new byte[pathLength];
+                fis.readNBytes(pathBytes, 0, pathLength);
+                String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
+                Path embeddedPath = Paths.get(outputPath, originalPath);
+                Files.createDirectories(embeddedPath.getParent());
+                File outputFile = embeddedPath.toFile();
+                
+                PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
+                erasePassword(passwordArray);
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+                SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+                spec.clearPassword();
+                
+                try(FileOutputStream fos = new FileOutputStream(outputFile)){
+                    byte[] buffer = new byte[CHUNK_SIZE];
                     
-                    int totalRead = 0;
-                    while (totalRead < pathLength) {
-                        int read = cis.read(pathBytes, totalRead, pathLength - totalRead);
-                        if (read == -1) {
-                            throw new IOException("Unable to read full path bytes");
+                    while (true){
+                        byte[] iv = new byte[IV_LENGTH];
+                        int ivBytes = fis.read(iv);
+                        if (ivBytes == -1){
+                            break;
                         }
-                        totalRead += read;
-                    }
-                    
-                    String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
-            
-                    Path outputFile = Paths.get(outputPath, originalPath);
-            
-                    Files.createDirectories(outputFile.getParent());
-                 
-                    try(FileOutputStream fos = new FileOutputStream(outputFile.toString())){
-                        byte[] buffer = new byte[CHUNK_SIZE];
-                        int bytesRead;
-                        while ((bytesRead = cis.read(buffer)) != -1) {
-                            fos.write(buffer, 0, bytesRead);
+                        if (ivBytes != IV_LENGTH){
+                            throw new IOException("Unexpected EOF reading chunk IV");
                         }
+                        
+                        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
+                        
+                        byte[] encryptedChunk = fis.readNBytes(CHUNK_SIZE + TAG_LENGTH/8);
+                        if (encryptedChunk.length == 0){
+                            break;
+                        }
+                        byte[] decrypted = cipher.doFinal(encryptedChunk);
+                        fos.write(decrypted);
+                        
                         eraseBytes(buffer);
                     }
-             }
-             spec.clearPassword();
+                }
         }
     }
     
@@ -166,8 +160,7 @@ public class SecureTools{
         new SecureRandom().nextBytes(salt);
         
         PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-        erasePassword(passwordArray);
-        
+        erasePassword(passwordArray);       
         
         byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
         spec.clearPassword();
