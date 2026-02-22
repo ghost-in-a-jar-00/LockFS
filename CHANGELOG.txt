@@ -1,3 +1,11 @@
+1.0.0-dev.3
+
+- Added action
+  - Delete files and directories after encryption
+  - Delete encrypted files after decryption
+
+---
+
 1.0.0-dev.2
 
 - GuiTools
