@@ -8,6 +8,7 @@ import lib.SecureTools;
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.*;
+import java.util.Comparator;
 import java.util.stream.Stream;
 
 import javax.swing.JDialog;
@@ -39,10 +40,24 @@ public class Lock{
 
                 try{
                     SecureTools.encryptFile(cwdEncrypt, file.toString(), outPath.toString(), password);
+                    Files.delete(file);
                 }catch (Exception e){
                     e.printStackTrace();
                 }
             });
+            
+            Path dir = Path.of(dirPath);
+            if (Files.exists(dir)){
+                Files.walk(dir)
+                .sorted(Comparator.reverseOrder())
+                .forEach(path -> {
+                try{
+                    Files.delete(path);
+                }catch (IOException e){
+                    e.printStackTrace();
+                }
+                });
+            }
             
         } catch (IOException e) {
             e.printStackTrace();

@@ -32,6 +32,7 @@ public class Unlock{
                 if (Files.isRegularFile(encFile) && encFile.toString().endsWith(ENC_EXT)){
                     try{
                         SecureTools.decryptFile(encFile.toString(), outPath.toString(), password);
+                        Files.delete(encFile);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
