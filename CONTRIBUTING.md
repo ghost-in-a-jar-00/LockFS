@@ -5,8 +5,8 @@
 - Search for existing issues
 - If the topic does not exist, open a new [issue](https://github.com/ghost-in-a-jar-00/LockFS/issues)
 - Write in the following format
-  `- Title: Summary of issue`
-  `- Description: Elaborate on the issue in detail(i.e. how to recreate, which platform you are using)`
+  - `Title: Summary of issue`
+  - `Description: Elaborate on the issue in detail(i.e. how to recreate, which platform you are using)`
 
 ## Feature Requests
 
