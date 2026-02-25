@@ -46,6 +46,8 @@ public class Lock{
                 }
             });
             
+          SecureTools.erasePassword(password);
+            
             Path dir = Path.of(dirPath);
             if (Files.exists(dir)){
                 Files.walk(dir)

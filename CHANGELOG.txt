@@ -1,3 +1,9 @@
+1.0.1-dev.1
+
+- Fixed a bug that caused only a single file to be encrypted in earlier versions.
+
+---
+
 1.0.0-dev.3
 
 - Added action

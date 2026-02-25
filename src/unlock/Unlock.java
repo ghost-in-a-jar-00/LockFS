@@ -41,6 +41,8 @@ public class Unlock{
         } catch (Exception e) {
             e.printStackTrace();
         }
+        
+        SecureTools.erasePassword(password);
     }
     
     private static void decryptingDialog(String dirPath, char[] password){

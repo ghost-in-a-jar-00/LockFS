@@ -69,7 +69,6 @@ public class SecureTools{
         new SecureRandom().nextBytes(salt);
         
         PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-        erasePassword(passwordArray);
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
         SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
         spec.clearPassword();
@@ -121,7 +120,6 @@ public class SecureTools{
                 File outputFile = embeddedPath.toFile();
                 
                 PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-                erasePassword(passwordArray);
                 SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
                 SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
                 spec.clearPassword();
@@ -159,8 +157,7 @@ public class SecureTools{
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
-        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-        erasePassword(passwordArray);       
+        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);     
         
         byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
         spec.clearPassword();
@@ -196,7 +193,6 @@ public class SecureTools{
         buffer.get(ciphertext);
         
         PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-        erasePassword(passwordArray);
         
         byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
         spec.clearPassword();
