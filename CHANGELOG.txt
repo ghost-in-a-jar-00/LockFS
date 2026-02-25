@@ -1,6 +1,8 @@
 1.0.1-dev.1
 
-- Fixed a bug that caused only a single file to be encrypted in earlier versions.
+- Fixed a bug that caused only a single file to be encrypted in earlier versions
+- Modified file encryption to encrypt embedded file paths
+- Make reveal.jar exit properly if error is raised during decryption
 
 ---
 

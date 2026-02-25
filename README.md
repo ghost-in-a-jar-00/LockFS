@@ -40,6 +40,9 @@ _Decrypted files can be found in `unlocked` folder_
   - [Security Goals](#Security-Goals)
   - [Security Assumptions](#Security-Assumptions)
   - [What LockFS Does Not Protect](#What-LockFS-Does-Not-Protect)
+- [Release Cycle](#Release-Cycle)
+  - [Development Release](#Development-Release-Pre-Release)
+  - [General Release](#General-Release-Latest-Release)
 - [License](#License)
 
 ## Features
@@ -107,6 +110,25 @@ The following scenarios are outside the protection scope of LockFS:
 - Memory inspection while files are being encrypted or decrypted
 - Weak or compromised user passwords or keys
 - Data leaks caused by other software on the system
+
+# Release Cycle
+
+LockFS uses a simplified release cycle:
+
+## Development Release (Pre-Release)
+- Active development versions
+- May include **alpha**, **beta**, or **feature-complete** states
+- All testing, feature additions, and bug fixes are done here
+- Expect experimental behavior
+
+## General Release (Latest Release)
+- Publicly available versions
+- Taken from the latest Development Release
+- **Typically stable**, but occasionally may include **short-lived unstable releases** for rapid iteration
+- Fixes from the Development Phase may be backported here
+- Users should report issues if they occur
+
+> This cycle prioritizes fast iteration while maintaining clarity about stability
 
 ## License
 
