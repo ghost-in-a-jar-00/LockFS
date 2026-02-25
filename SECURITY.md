@@ -14,6 +14,8 @@
 
 If you discover a security issue in LockFS, please report it by opening a [new security advisory](https://github.com/ghost-in-a-jar-00/LockFS/security/advisories)
 
+This is the preferred and most secure way to ensure we can address the issue promptly
+
 **Include the following details**
 
 - Description of the security issue
@@ -31,8 +33,8 @@ We will acknowledge receipt within **48 hours** and aim to provide a fix or guid
 
 ## Acknowledgements
 
-- u/Arcuru
+- [u/Arcuru](https://www.reddit.com/user/Arcuru/)
   - Logic bug preventing files beyond the first from encrypting
-  - <= 1.0.0
+  - Affected versions: `<= 1.0.0`
   - Status: Troubleshooting
  

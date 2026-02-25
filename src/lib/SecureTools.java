@@ -61,10 +61,6 @@ public class SecureTools{
         String filePath = relativePath.toString();
         byte[] pathBytes = filePath.getBytes(StandardCharsets.UTF_8);
         
-        if (pathBytes.length > 65535) {
-            throw new IllegalArgumentException("Path too long for 2-byte length");
-        }
-        
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
@@ -77,10 +73,24 @@ public class SecureTools{
              FileOutputStream fos = new FileOutputStream(outputFile)){
              
                 fos.write(salt);
+                
+                if (pathBytes.length > 65535) {
+                    throw new IllegalArgumentException("Path too long for 2-byte length");
+                }
+                
+                byte[] pathIV = new byte[IV_LENGTH];
+                new SecureRandom().nextBytes(pathIV);
+                Cipher pathCipher = Cipher.getInstance("AES/GCM/NoPadding");
+                pathCipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, pathIV));
+                byte[] encryptedPath = pathCipher.doFinal(pathBytes);
+                
+                fos.write(pathIV);
              
-                fos.write((pathBytes.length >> 8) & 0xFF);
-                fos.write(pathBytes.length & 0xFF);
-                fos.write(pathBytes);
+                fos.write((encryptedPath.length >> 8) & 0xFF);
+                fos.write(encryptedPath.length & 0xFF);
+                fos.write(encryptedPath);
+                
+                eraseBytes(pathBytes);
                 
                 byte[] buffer = new byte[CHUNK_SIZE];
                 int read;
@@ -106,23 +116,35 @@ public class SecureTools{
                 byte[] salt = new byte[SALT_LENGTH];
                 fis.readNBytes(salt, 0, SALT_LENGTH);
                 
+                PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+                SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
+                spec.clearPassword();
+                
+                byte[] pathIV = new byte[IV_LENGTH];
+                if (fis.read(pathIV) != IV_LENGTH){
+                    throw new IOException("Unexpected EOF reading path IV");
+                }
+                
                 int highByte = fis.read();
                 int lowByte = fis.read();
                 if (highByte == -1 || lowByte == -1) {
                     throw new IOException("Unexpected EOF while reading path length");
                 }
                 int pathLength = (highByte << 8) | lowByte;
-                byte[] pathBytes = new byte[pathLength];
-                fis.readNBytes(pathBytes, 0, pathLength);
+                byte[] encPathBytes = new byte[pathLength];
+                
+                if (fis.readNBytes(encPathBytes, 0, pathLength) != pathLength){
+                    throw new IOException("Unexpected EOF reading encrypted path bytes");
+                }
+                
+                Cipher pathCipher = Cipher.getInstance("AES/GCM/NoPadding");
+                pathCipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, pathIV));
+                byte[] pathBytes = pathCipher.doFinal(encPathBytes);
                 String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
                 Path embeddedPath = Paths.get(outputPath, originalPath);
                 Files.createDirectories(embeddedPath.getParent());
-                File outputFile = embeddedPath.toFile();
-                
-                PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-                SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
-                spec.clearPassword();
+                File outputFile = embeddedPath.toFile();             
                 
                 try(FileOutputStream fos = new FileOutputStream(outputFile)){
                     byte[] buffer = new byte[CHUNK_SIZE];

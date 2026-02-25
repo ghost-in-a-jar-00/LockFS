@@ -3,6 +3,7 @@
 // This is licensed under the MIT License
 
 import lib.GuiTools;
+import lib.SecureTools;
 import lib.FileOp;
 
 public class GenVault{
@@ -14,6 +15,7 @@ public class GenVault{
         char[] vaultName = GuiTools.getText(title, purpose);
         
         FileOp.createVault(vaultName, password);
+        SecureTools.erasePassword(password);
         
         System.exit(0);
     }

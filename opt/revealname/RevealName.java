@@ -3,6 +3,7 @@
 // This is licensed under the MIT License
 
 import lib.GuiTools;
+import lib.SecureTools;
 import lib.FileOp;
 import java.io.File;
 import java.nio.file.Path;
@@ -34,8 +35,15 @@ public class RevealName{
             if (files != null && files.length > 0) {
                 File focusFile = files[0];
                 Path focusPath = focusFile.toPath();
-                char[] nameMeta = FileOp.peekVault(focusPath, password);
-                prepDisplay(nameMeta);
+                try{
+                    char[] nameMeta = FileOp.peekVault(focusPath, password);
+                    SecureTools.erasePassword(password);
+                    prepDisplay(nameMeta);
+                }catch (Exception e){
+                    System.err.println("Failed to read vault: " + e.getMessage());
+                    System.exit(1);
+                }
+                
             }
         }else{
             throw new IOException(vaultPath.getPath() + " not found");
