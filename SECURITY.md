@@ -4,11 +4,11 @@
 
 **General Release**
 
-`1.0.0`
+`1.0.1`
 
 **Development Release**
 
-`1.0.1-dev.1`
+`1.0.2-dev.1`
 
 ## Reporting a Vulnerability
 
@@ -34,7 +34,8 @@ We will acknowledge receipt within **48 hours** and aim to provide a fix or guid
 ## Acknowledgements
 
 - [u/Arcuru](https://www.reddit.com/user/Arcuru/)
+  - Found on 2026 Feb 25
   - Logic bug preventing files beyond the first from encrypting
   - Affected versions: `<= 1.0.0`
-  - Status: Troubleshooting
+  - Status: Patched as `1.0.1-dev.1`, Released as `1.0.1`
  
