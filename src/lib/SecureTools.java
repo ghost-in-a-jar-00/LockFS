@@ -50,7 +50,7 @@ public class SecureTools{
     
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
-    private static final int ITERATIONS = 100000;
+    private static final int ITERATIONS = 600000;
     private static final int KEY_SIZE = 256;
     private static final int TAG_LENGTH = 128;
     private static final int CHUNK_SIZE = 4096;
