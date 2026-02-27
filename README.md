@@ -13,8 +13,8 @@
 ## Instructions
 
 1. Download latest `lockfs.zip` from these releases:
-  - *Current General Release*: [1.0.1](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.1)
-  - *Current Development Release (Pre-Release)*: [1.0.1-dev.1](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.1-dev.1) (**may contain new features and bugs**)
+  - *Current General Release*: [1.0.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.1)
+  - *Current Development Release (Pre-Release)*: [1.0.1-dev.1](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.2-dev.1) (**may contain new features and bugs**)
   
 2. Unzip the `lockfs.zip` and open the `lockfs` folder
 3. Open a terminal or command prompt
