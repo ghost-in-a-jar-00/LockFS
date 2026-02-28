@@ -48,6 +48,8 @@ _Decrypted files can be found in `unlocked` folder_
 - [Release Cycle](#Release-Cycle)
   - [Development Release](#Development-Release-Pre-Release)
   - [General Release](#General-Release-Latest-Release)
+- [Developers](#Developers)
+  - [Tools And Dependencies](#Tools-And-Dependencies)
 - [License](#License)
 
 ## Features
@@ -130,10 +132,24 @@ LockFS uses a simplified release cycle:
 - Publicly available versions
 - Taken from the latest Development Release
 - **Typically stable**, but occasionally may include **short-lived unstable releases** for rapid iteration
-- Fixes from the Development Phase may be backported here
+- Fixes from the Development Release may be backported here
 - Users should report issues if they occur
 
 > This cycle prioritizes fast iteration while maintaining clarity about stability
+
+# Developers
+
+This section is geared towards contributors or those who want to replicate the build environment used for LockFS.
+
+## Tools And Dependencies
+
+LockFS is tested using the following:
+
+- Gradle `9.1.3`
+  - Groovy `5.0.4`
+  - _PLUGIN_: com.gradleup.shadow `9.3.0` 
+- OpenJDK `25`
+  - BouncyCastle `1.83`
 
 ## License
 

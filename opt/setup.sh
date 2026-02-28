@@ -1,4 +1,4 @@
-cp -r lib genvault
-cp -r lib revealname
-cp -r ../src/lib genvault
-cp -r ../src/lib revealname
+cp ../src/lib/* lib
+
+cp -r lib genvault/app/src/main/java/org/lockfs
+cp -r lib revealname/app/src/main/java/org/lockfs

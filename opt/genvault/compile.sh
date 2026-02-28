@@ -1,2 +1,4 @@
-javac -cp .:lib GenVault.java 
-jar cfm genvault.jar manifest.txt *.class lib/*.class
+./gradlew shadowJar
+
+cp app/build/libs/app-all.jar .
+mv app-all.jar genvault.jar

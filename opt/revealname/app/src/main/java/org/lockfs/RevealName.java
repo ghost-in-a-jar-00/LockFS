@@ -2,6 +2,8 @@
 // Written by Ghost In A Jar
 // This is licensed under the MIT License
 
+package org.lockfs;
+
 import lib.GuiTools;
 import lib.SecureTools;
 import lib.FileOp;
