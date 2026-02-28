@@ -1,2 +1,4 @@
-javac -cp .:lib Unlock.java 
-jar cfm unlock.jar manifest.txt *.class lib/*.class 
+./gradlew shadowJar
+
+cp app/build/libs/app-all.jar .
+mv app-all.jar unlock.jar

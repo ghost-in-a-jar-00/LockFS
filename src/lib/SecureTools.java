@@ -4,13 +4,14 @@
 
 package lib;
 
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
+import org.bouncycastle.crypto.params.Argon2Parameters;
+
 import java.io.*;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.GCMParameterSpec;
 
@@ -50,10 +51,13 @@ public class SecureTools{
     
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
-    private static final int ITERATIONS = 600000;
     private static final int KEY_SIZE = 256;
     private static final int TAG_LENGTH = 128;
     private static final int CHUNK_SIZE = 4096;
+    
+    private static final int A2ID_MEMORY = 65536;
+    private static final int A2ID_THREADS = 2;
+    private static final int A2ID_ITERATIONS = 4;
     
     public static void encryptFile(Path cwdEncrypt, String inputFile, String outputFile, char[] passwordArray) throws Exception{
         Path inputPath = Paths.get(inputFile);
@@ -64,10 +68,27 @@ public class SecureTools{
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
-        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
-        spec.clearPassword();
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                                               .withSalt(salt)
+                                               .withParallelism(A2ID_THREADS)
+                                               .withMemoryAsKB(A2ID_MEMORY)
+                                               .withIterations(A2ID_ITERATIONS);
+                                               
+        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+        generator.init(builder.build());
+        
+        byte[] passwordBytes = new byte[passwordArray.length];
+        for (int i = 0; i < passwordArray.length; i++){
+            passwordBytes[i] = (byte) passwordArray[i];
+        }
+        
+        byte[] keyBytes = new byte[KEY_SIZE/8];
+        generator.generateBytes(passwordBytes, keyBytes);
+        
+        SecretKey key = new SecretKeySpec(keyBytes, "AES");
+        
+        eraseBytes(passwordBytes);
+        eraseBytes(keyBytes);
         
         try (FileInputStream fis = new FileInputStream(inputFile);
              FileOutputStream fos = new FileOutputStream(outputFile)){
@@ -116,10 +137,27 @@ public class SecureTools{
                 byte[] salt = new byte[SALT_LENGTH];
                 fis.readNBytes(salt, 0, SALT_LENGTH);
                 
-                PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
-                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-                SecretKey key = new SecretKeySpec(factory.generateSecret(spec).getEncoded(), "AES");
-                spec.clearPassword();
+                Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                                                       .withSalt(salt)
+                                                       .withParallelism(A2ID_THREADS)
+                                                       .withMemoryAsKB(A2ID_MEMORY)
+                                                       .withIterations(A2ID_ITERATIONS);
+                                                       
+                Argon2BytesGenerator generator = new Argon2BytesGenerator();
+                generator.init(builder.build());
+                
+                byte[] passwordBytes = new byte[passwordArray.length];
+                for (int i = 0; i < passwordArray.length; i++){
+                    passwordBytes[i] = (byte) passwordArray[i];
+                }
+                
+                byte[] keyBytes = new byte[KEY_SIZE/8];
+                generator.generateBytes(passwordBytes, keyBytes);
+                
+                SecretKey key = new SecretKeySpec(keyBytes, "AES");
+                
+                eraseBytes(passwordBytes);
+                eraseBytes(keyBytes);
                 
                 byte[] pathIV = new byte[IV_LENGTH];
                 if (fis.read(pathIV) != IV_LENGTH){
@@ -179,11 +217,26 @@ public class SecureTools{
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
         
-        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);     
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                                               .withSalt(salt)
+                                               .withParallelism(A2ID_THREADS)
+                                               .withMemoryAsKB(A2ID_MEMORY)
+                                               .withIterations(A2ID_ITERATIONS);
+                                               
+        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+        generator.init(builder.build());
         
-        byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
-        spec.clearPassword();
+        byte[] passwordBytes = new byte[passwordArray.length];
+        for (int i = 0; i < passwordArray.length; i++){
+            passwordBytes[i] = (byte) passwordArray[i];
+        }
+        
+        byte[] keyBytes = new byte[KEY_SIZE/8];
+        generator.generateBytes(passwordBytes, keyBytes);
+        
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        
+        eraseBytes(passwordBytes);
         eraseBytes(keyBytes);
             
         byte[] iv = new byte[IV_LENGTH];
@@ -214,11 +267,26 @@ public class SecureTools{
         byte[] ciphertext = new byte[buffer.remaining()];
         buffer.get(ciphertext);
         
-        PBEKeySpec spec = new PBEKeySpec(passwordArray, salt, ITERATIONS, KEY_SIZE);
+        Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
+                                               .withSalt(salt)
+                                               .withParallelism(A2ID_THREADS)
+                                               .withMemoryAsKB(A2ID_MEMORY)
+                                               .withIterations(A2ID_ITERATIONS);
+                                               
+        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+        generator.init(builder.build());
         
-        byte[] keyBytes = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
-        spec.clearPassword();
+        byte[] passwordBytes = new byte[passwordArray.length];
+        for (int i = 0; i < passwordArray.length; i++){
+            passwordBytes[i] = (byte) passwordArray[i];
+        }
+        
+        byte[] keyBytes = new byte[KEY_SIZE/8];
+        generator.generateBytes(passwordBytes, keyBytes);
+        
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        
+        eraseBytes(passwordBytes);
         eraseBytes(keyBytes);
             
         GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);

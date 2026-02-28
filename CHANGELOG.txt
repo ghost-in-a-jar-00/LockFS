@@ -1,3 +1,11 @@
+2.0.0-dev.1
+
+- Change KDF from PBKDF2-HMAC-SHA256 to Argon2id
+- Drop PBKDF2-HMAC-SHA256
+- Gradle build with Groovy DSL implemented with BouncyCastle
+
+---
+
 1.0.2
 
 - Increased iteration for key derivation
