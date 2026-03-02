@@ -14,7 +14,7 @@
 
 1. Download latest `lockfs.zip` from these releases:
   - *Current General Release*: [1.0.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.1)
-  - *Current Development Release (Pre-Release)*: [2.0.0-dev.1](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0-dev.1) (**may contain new features and bugs**)
+  - *Current Development Release (Pre-Release)*: [2.0.0-dev.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0-dev.2) (**may contain new features and bugs**)
   
 2. Unzip the `lockfs.zip` and open the `lockfs` folder
 3. Open a terminal or command prompt
@@ -50,6 +50,8 @@ _Decrypted files can be found in `unlocked` folder_
   - [General Release](#General-Release-Latest-Release)
 - [Developers](#Developers)
   - [Tools And Dependencies](#Tools-And-Dependencies)
+- [File Version Tracker](#File-Version-Tracker)
+  - [LockFS1](#LockFS1)
 - [License](#License)
 
 ## Features
@@ -150,6 +152,19 @@ LockFS is tested using the following:
   - _PLUGIN_: com.gradleup.shadow `9.3.0` 
 - OpenJDK `25`
   - BouncyCastle `1.83`
+  
+# File Version Tracker
+
+This section tracks the file versions. Each file version has specific encryption parameters required to decrypt your files
+
+**Note:** If you are using an older file version, you will need to use the software version released **before** the introduced version to decrypt it.
+
+## LockFS V1 (LockFS1)
+- Encryption Algo: **AES**
+- Encryption Mode: **GCM**
+- Encryption Padding: **No Paddding**
+- KDF: **Argon2id**
+- Introduced: `2.0.0-dev.1`
 
 ## License
 
