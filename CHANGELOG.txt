@@ -1,3 +1,16 @@
+2.0.0-dev.2
+
+- Futureproofing of file data by writing parameters to the file
+- Introducing LockFS with a file format
+- Renamed functions to better suit its purpose
+  - SecureTools "encryptIO" to "encryptVaultData"
+  - SecureTools "decryptIO" to "decryptVaultData"
+- Renamed functions to include the following
+  - SecureTools "encryptVaultData" to include a output source
+  - SecureTools "decryptVaultData" to include an input source
+
+---
+
 2.0.0-dev.1
 
 - Change KDF from PBKDF2-HMAC-SHA256 to Argon2id

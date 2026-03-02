@@ -21,7 +21,6 @@ import java.security.SecureRandom;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 
@@ -48,6 +47,18 @@ public class SecureTools{
         
         return hex.toString();
     }
+    
+    private static final String CURRENT_FORMAT = "LockFS1";
+    
+    private static final String CURRENT_CIPHER_ALGO = "AES";
+    private static final String CURRENT_CIPHER_MODE = "GCM";
+    private static final String CURRENT_CIPHER_PADDING = "NoPadding";
+    
+    private static final String CURRENT_CIPHER = CURRENT_CIPHER_ALGO + "/" +
+                                                 CURRENT_CIPHER_MODE + "/" +
+                                                 CURRENT_CIPHER_PADDING;
+    
+    private static final String CURRENT_KDF = "Argon2id";
     
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
@@ -85,13 +96,38 @@ public class SecureTools{
         byte[] keyBytes = new byte[KEY_SIZE/8];
         generator.generateBytes(passwordBytes, keyBytes);
         
-        SecretKey key = new SecretKeySpec(keyBytes, "AES");
+        SecretKey key = new SecretKeySpec(keyBytes, CURRENT_CIPHER_ALGO);
         
         eraseBytes(passwordBytes);
         eraseBytes(keyBytes);
         
         try (FileInputStream fis = new FileInputStream(inputFile);
              FileOutputStream fos = new FileOutputStream(outputFile)){
+                FormatHelpers.writeFixedString(fos, CURRENT_FORMAT, 8, "LockFS file version");
+                FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_ALGO, 8, "cipher algo");
+                FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_MODE, 4, "cipher mode");
+                FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_PADDING, 10, "cipher padding");
+                FormatHelpers.writeFixedString(fos, CURRENT_KDF, 10, "KDF type");
+                
+                fos.write(SALT_LENGTH);
+                fos.write(IV_LENGTH);
+                fos.write(TAG_LENGTH);
+                
+                fos.write((KEY_SIZE >>> 8) & 0xFF);
+                fos.write(KEY_SIZE & 0xFF);
+                
+                fos.write((CHUNK_SIZE >>> 24) & 0xFF);
+                fos.write((CHUNK_SIZE >>> 16) & 0xFF);
+                fos.write((CHUNK_SIZE >>> 8) & 0xFF);
+                fos.write(CHUNK_SIZE & 0xFF);
+                
+                fos.write((A2ID_MEMORY >>> 24) & 0xFF);
+                fos.write((A2ID_MEMORY >>> 16) & 0xFF);
+                fos.write((A2ID_MEMORY >>> 8) & 0xFF);
+                fos.write(A2ID_MEMORY & 0xFF);
+                
+                fos.write(A2ID_THREADS);
+                fos.write(A2ID_ITERATIONS);
              
                 fos.write(salt);
                 
@@ -101,7 +137,7 @@ public class SecureTools{
                 
                 byte[] pathIV = new byte[IV_LENGTH];
                 new SecureRandom().nextBytes(pathIV);
-                Cipher pathCipher = Cipher.getInstance("AES/GCM/NoPadding");
+                Cipher pathCipher = Cipher.getInstance(CURRENT_CIPHER);
                 pathCipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, pathIV));
                 byte[] encryptedPath = pathCipher.doFinal(pathBytes);
                 
@@ -121,7 +157,7 @@ public class SecureTools{
                     new SecureRandom().nextBytes(iv);
                     fos.write(iv);
                     
-                    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                    Cipher cipher = Cipher.getInstance(CURRENT_CIPHER);
                     cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
                     
                     byte[] encryptedChunk = cipher.doFinal(buffer, 0, read);
@@ -131,17 +167,53 @@ public class SecureTools{
              }
     }
     
-    public static void decryptFile(String inputFile, String outputPath, char[] passwordArray) throws Exception{
+    public static void decryptFile(String inputFile, String outputPath, char[] passwordArray) throws Exception{    
         try (FileInputStream fis = new FileInputStream(inputFile)){
+                String fileFormat = FormatHelpers.getFixedString(fis, 8, "LockFS file format version");
+                if (!CURRENT_FORMAT.equals(fileFormat)){
+                    throw new IOException(inputFile + " is not the current LockFS file format version");
+                }
+                
+                String cipherAlgo = FormatHelpers.getFixedString(fis, 8, "cipher algo");
+                if (!CURRENT_CIPHER_ALGO.equals(cipherAlgo)){
+                    throw new IOException(inputFile + " uses the " + fileFormat + " cipher algo");
+                }
+                
+                String cipherMode = FormatHelpers.getFixedString(fis, 4, "cipher mode");
+                if (!CURRENT_CIPHER_MODE.equals(cipherMode)){
+                    throw new IOException(inputFile + " uses the " + fileFormat + " cipher mode");
+                }
+                
+                String cipherPadding = FormatHelpers.getFixedString(fis, 10, "cipher padding");
+                if (!CURRENT_CIPHER_PADDING.equals(cipherPadding)){
+                    throw new IOException(inputFile + " uses the " + fileFormat + " cipher padding type");
+                }
+                
+                String kdf = FormatHelpers.getFixedString(fis, 10, "KDF method");
+                if (!CURRENT_KDF.equals(kdf)){
+                    throw new IOException(inputFile + " uses the " + fileFormat + " KDF method");
+                }
+                
+                int saltLength = FormatHelpers.getSingleInt(fis, "salt length");
+                int ivLength = FormatHelpers.getSingleInt(fis, "IV length");
+                int tagLength = FormatHelpers.getSingleInt(fis, "tag length");
+                
+                int keySize = FormatHelpers.getShortInt(fis, "key size");
+                
+                int chunkSize = FormatHelpers.getLongInt(fis, "chunk size");
+                
+                int kdfMemory = FormatHelpers.getLongInt(fis, "KDF memory");
+                int kdfThreads = FormatHelpers.getSingleInt(fis, "KDF threads usage");
+                int kdfIterations = FormatHelpers.getSingleInt(fis, "KDF iterations");
              
-                byte[] salt = new byte[SALT_LENGTH];
-                fis.readNBytes(salt, 0, SALT_LENGTH);
+                byte[] salt = new byte[saltLength];
+                fis.readNBytes(salt, 0, saltLength);
                 
                 Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                                                        .withSalt(salt)
-                                                       .withParallelism(A2ID_THREADS)
-                                                       .withMemoryAsKB(A2ID_MEMORY)
-                                                       .withIterations(A2ID_ITERATIONS);
+                                                       .withParallelism(kdfThreads)
+                                                       .withMemoryAsKB(kdfMemory)
+                                                       .withIterations(kdfIterations);
                                                        
                 Argon2BytesGenerator generator = new Argon2BytesGenerator();
                 generator.init(builder.build());
@@ -151,16 +223,16 @@ public class SecureTools{
                     passwordBytes[i] = (byte) passwordArray[i];
                 }
                 
-                byte[] keyBytes = new byte[KEY_SIZE/8];
+                byte[] keyBytes = new byte[keySize/8];
                 generator.generateBytes(passwordBytes, keyBytes);
                 
-                SecretKey key = new SecretKeySpec(keyBytes, "AES");
+                SecretKey key = new SecretKeySpec(keyBytes, CURRENT_CIPHER_ALGO);
                 
                 eraseBytes(passwordBytes);
                 eraseBytes(keyBytes);
                 
-                byte[] pathIV = new byte[IV_LENGTH];
-                if (fis.read(pathIV) != IV_LENGTH){
+                byte[] pathIV = new byte[ivLength];
+                if (fis.read(pathIV) != ivLength){
                     throw new IOException("Unexpected EOF reading path IV");
                 }
                 
@@ -176,8 +248,8 @@ public class SecureTools{
                     throw new IOException("Unexpected EOF reading encrypted path bytes");
                 }
                 
-                Cipher pathCipher = Cipher.getInstance("AES/GCM/NoPadding");
-                pathCipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, pathIV));
+                Cipher pathCipher = Cipher.getInstance(CURRENT_CIPHER);
+                pathCipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(tagLength, pathIV));
                 byte[] pathBytes = pathCipher.doFinal(encPathBytes);
                 String originalPath = new String(pathBytes, StandardCharsets.UTF_8);
                 Path embeddedPath = Paths.get(outputPath, originalPath);
@@ -185,10 +257,10 @@ public class SecureTools{
                 File outputFile = embeddedPath.toFile();             
                 
                 try(FileOutputStream fos = new FileOutputStream(outputFile)){
-                    byte[] buffer = new byte[CHUNK_SIZE];
+                    byte[] buffer = new byte[chunkSize];
                     
                     while (true){
-                        byte[] iv = new byte[IV_LENGTH];
+                        byte[] iv = new byte[ivLength];
                         int ivBytes = fis.read(iv);
                         if (ivBytes == -1){
                             break;
@@ -197,10 +269,10 @@ public class SecureTools{
                             throw new IOException("Unexpected EOF reading chunk IV");
                         }
                         
-                        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-                        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(TAG_LENGTH, iv));
+                        Cipher cipher = Cipher.getInstance(CURRENT_CIPHER);
+                        cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(tagLength, iv));
                         
-                        byte[] encryptedChunk = fis.readNBytes(CHUNK_SIZE + TAG_LENGTH/8);
+                        byte[] encryptedChunk = fis.readNBytes(chunkSize + tagLength/8);
                         if (encryptedChunk.length == 0){
                             break;
                         }
@@ -213,9 +285,35 @@ public class SecureTools{
         }
     }
     
-    public static byte[] encryptIO(byte[] data, char[] passwordArray) throws Exception{
+        
+    // encryptVaultData and decryptVaultData is not designed with the intention of handling large file sizes
+    // For use cases like storing metadata for example, they should be sufficient
+    
+    public static void encryptVaultData(FileOutputStream fos, byte[] data, char[] passwordArray) throws Exception{    
+        FormatHelpers.writeFixedString(fos, CURRENT_FORMAT, 8, "LockFS file version");
+        FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_ALGO, 8, "cipher algo");
+        FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_MODE, 4, "cipher mode");
+        FormatHelpers.writeFixedString(fos, CURRENT_CIPHER_PADDING, 10, "cipher padding");
+        FormatHelpers.writeFixedString(fos, CURRENT_KDF, 10, "KDF type");
+        
+        fos.write(SALT_LENGTH);
+        fos.write(IV_LENGTH);
+        fos.write(TAG_LENGTH);
+        
+        fos.write((KEY_SIZE >>> 8) & 0xFF);
+        fos.write(KEY_SIZE & 0xFF);
+        
+        fos.write((A2ID_MEMORY >>> 24) & 0xFF);
+        fos.write((A2ID_MEMORY >>> 16) & 0xFF);
+        fos.write((A2ID_MEMORY >>> 8) & 0xFF);
+        fos.write(A2ID_MEMORY & 0xFF);
+                
+        fos.write(A2ID_THREADS);
+        fos.write(A2ID_ITERATIONS);
+    
         byte[] salt = new byte[SALT_LENGTH];
         new SecureRandom().nextBytes(salt);
+        fos.write(salt);
         
         Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                                                .withSalt(salt)
@@ -234,44 +332,78 @@ public class SecureTools{
         byte[] keyBytes = new byte[KEY_SIZE/8];
         generator.generateBytes(passwordBytes, keyBytes);
         
-        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        SecretKeySpec key = new SecretKeySpec(keyBytes, CURRENT_CIPHER_ALGO);
         
         eraseBytes(passwordBytes);
         eraseBytes(keyBytes);
             
         byte[] iv = new byte[IV_LENGTH];
         new SecureRandom().nextBytes(iv);
+        fos.write(iv);
+        
         GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
         
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        Cipher cipher = Cipher.getInstance(CURRENT_CIPHER);
         cipher.init(Cipher.ENCRYPT_MODE, key, gcmSpec);
         
         byte[] encData = cipher.doFinal(data);
         
-        ByteBuffer buffer = ByteBuffer.allocate(salt.length + iv.length + encData.length);
-        buffer.put(salt);
-        buffer.put(iv);
-        buffer.put(encData);
-        return buffer.array();
+        fos.write(encData);
     }
     
-    public static byte[] decryptIO(byte[] encData, char[] passwordArray) throws Exception{
-        ByteBuffer buffer = ByteBuffer.wrap(encData);
+    public static byte[] decryptVaultData(FileInputStream fis, char[] passwordArray) throws Exception{
+        String fileFormat = FormatHelpers.getFixedString(fis, 8, "LockFS file format version");
+        if (!CURRENT_FORMAT.equals(fileFormat)){
+            throw new IOException("The vault is not the current LockFS file format version");
+        }
+                
+        String cipherAlgo = FormatHelpers.getFixedString(fis, 8, "cipher algo");
+        if (!CURRENT_CIPHER_ALGO.equals(cipherAlgo)){
+            throw new IOException("The vault uses the " + fileFormat + " cipher algo");
+        }
+                
+        String cipherMode = FormatHelpers.getFixedString(fis, 4, "cipher mode");
+        if (!CURRENT_CIPHER_MODE.equals(cipherMode)){
+            throw new IOException("The vault uses the " + fileFormat + " cipher mode");
+        }
+                
+        String cipherPadding = FormatHelpers.getFixedString(fis, 10, "cipher padding");
+        if (!CURRENT_CIPHER_PADDING.equals(cipherPadding)){
+            throw new IOException("The vault uses the " + fileFormat + " cipher padding type");
+        }
+                
+        String kdf = FormatHelpers.getFixedString(fis, 10, "KDF method");
+        if (!CURRENT_KDF.equals(kdf)){
+            throw new IOException("The vault uses the " + fileFormat + " KDF method");
+        }
+                
+        int saltLength = FormatHelpers.getSingleInt(fis, "salt length");
+        int ivLength = FormatHelpers.getSingleInt(fis, "IV length");
+        int tagLength = FormatHelpers.getSingleInt(fis, "tag length");
+                
+        int keySize = FormatHelpers.getShortInt(fis, "key size");
+                
+        int kdfMemory = FormatHelpers.getLongInt(fis, "KDF memory");
+        int kdfThreads = FormatHelpers.getSingleInt(fis, "KDF threads usage");
+        int kdfIterations = FormatHelpers.getSingleInt(fis, "KDF iterations");
         
-        byte[] salt = new byte[SALT_LENGTH];
-        buffer.get(salt);
+        byte[] salt = new byte[saltLength];
+        if (fis.read(salt) != saltLength) {
+            throw new IOException("Failed to read salt from file");
+        }
         
-        byte[] iv = new byte[IV_LENGTH];
-        buffer.get(iv);
+        byte[] iv = new byte[ivLength];
+        if (fis.read(iv) != ivLength) {
+            throw new IOException("Failed to read IV from file");
+        }
         
-        byte[] ciphertext = new byte[buffer.remaining()];
-        buffer.get(ciphertext);
+        byte[] ciphertext = fis.readAllBytes();
         
         Argon2Parameters.Builder builder = new Argon2Parameters.Builder(Argon2Parameters.ARGON2_id)
                                                .withSalt(salt)
-                                               .withParallelism(A2ID_THREADS)
-                                               .withMemoryAsKB(A2ID_MEMORY)
-                                               .withIterations(A2ID_ITERATIONS);
+                                               .withParallelism(kdfThreads)
+                                               .withMemoryAsKB(kdfMemory)
+                                               .withIterations(kdfIterations);
                                                
         Argon2BytesGenerator generator = new Argon2BytesGenerator();
         generator.init(builder.build());
@@ -281,17 +413,18 @@ public class SecureTools{
             passwordBytes[i] = (byte) passwordArray[i];
         }
         
-        byte[] keyBytes = new byte[KEY_SIZE/8];
+        byte[] keyBytes = new byte[keySize/8];
         generator.generateBytes(passwordBytes, keyBytes);
         
-        SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        SecretKeySpec key = new SecretKeySpec(keyBytes, CURRENT_CIPHER_ALGO);
         
         eraseBytes(passwordBytes);
         eraseBytes(keyBytes);
             
-        GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH, iv);
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(tagLength, iv);
+        Cipher cipher = Cipher.getInstance(CURRENT_CIPHER);
         cipher.init(Cipher.DECRYPT_MODE, key, gcmSpec);
+        
         return cipher.doFinal(ciphertext);
     }
 }

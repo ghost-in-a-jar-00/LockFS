@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -17,36 +18,33 @@ public class FileOp{
     private static final String VAULT_MAIN = "VAULT";
     private static final int VAULT_ALIAS_NAME_LEN = 8;
     
-    public static char[] peekVault(Path pathDB, char[] password) throws Exception{        
-        try{
-            File fileDB = pathDB.toFile();
+    public static char[] peekVault(Path pathDB, char[] password) throws Exception{
+        File fileDB = pathDB.toFile();
             
-            if (!fileDB.exists()) {
-                throw new IOException(pathDB + " not found: ");
-            }
+        if (!fileDB.exists()){
+            throw new IOException(pathDB + " not found: ");
+        }
             
-            byte[] encMeta = Files.readAllBytes(pathDB);
-            
-            byte[] details = SecureTools.decryptIO(encMeta, password);
-            
+        try (FileInputStream fis = new FileInputStream(fileDB)){
+            byte[] details = SecureTools.decryptVaultData(fis, password);
+                
             if (details.length % 2 != 0) {
                 throw new IOException("Invalid byte length for char conversion");
             }
-            
+                
             char[] nameMeta = new char[details.length / 2];
-            
-            for (int i = 0; i < nameMeta.length; i++) {
+                
+            for (int i = 0; i < nameMeta.length; i++){
                 nameMeta[i] = (char) (((details[i * 2] & 0xFF) << 8) | (details[i * 2 + 1] & 0xFF));
             }
-            
+                
             SecureTools.eraseBytes(details);
-            
+                
             return nameMeta;
-            
-        } catch (Exception e){
+        }catch (IOException e){
             e.printStackTrace();
             throw e;
-        }        
+        }       
     }
     
     private static void storeAlias(String alias, char[] vaultName, char[] password) throws Exception{
@@ -69,12 +67,10 @@ public class FileOp{
         
         SecureTools.erasePassword(nameMeta);
         
-        byte[] encMeta = SecureTools.encryptIO(details, password);
-        
         File fileDB = pathDB.toFile();
         
         try (FileOutputStream fos = new FileOutputStream(fileDB)) {
-            fos.write(encMeta);
+            SecureTools.encryptVaultData(fos, details, password);
         } catch (IOException e) {
             e.printStackTrace();
         }
