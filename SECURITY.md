@@ -4,7 +4,7 @@
 
 **General Release**
 
-`1.0.2`
+`2.0.0`
 
 **Development Release**
 
