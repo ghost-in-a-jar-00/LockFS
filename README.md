@@ -13,7 +13,7 @@
 ## Instructions
 
 1. Download latest `lockfs.zip` from these releases:
-  - *Current General Release*: [1.0.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/1.0.1)
+  - *Current General Release*: [2.0.0](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0)
   - *Current Development Release (Pre-Release)*: [2.0.0-dev.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0-dev.2) (**may contain new features and bugs**)
   
 2. Unzip the `lockfs.zip` and open the `lockfs` folder
@@ -45,6 +45,8 @@ _Decrypted files can be found in `unlocked` folder_
   - [Security Goals](#Security-Goals)
   - [Security Assumptions](#Security-Assumptions)
   - [What LockFS Does Not Protect](#What-LockFS-Does-Not-Protect)
+- [PGP Key Fingerprints](#PGP-Key-Fingerprints)
+  - [Instructions To Verify Releases](#Instructions-To-Verify-Releases)
 - [Release Cycle](#Release-Cycle)
   - [Development Release](#Development-Release-Pre-Release)
   - [General Release](#General-Release-Latest-Release)
@@ -119,6 +121,39 @@ The following scenarios are outside the protection scope of LockFS:
 - Memory inspection while files are being encrypted or decrypted
 - Weak or compromised user passwords or keys
 - Data leaks caused by other software on the system
+
+# PGP Key Fingerprints
+
+These are the PGP keys for verifying that the releases are authentic. You can get a copy of the keys [here](pub-keys.asc)
+
+0xGhostInAJar `6C31 6AD1 B314 BA1B BB36  0D23 70EC 4ECD 1B3B 0D16`
+
+## Instructions To Verify Releases
+
+You will need the following items to verify your release
+
+- GnuPG or [Gpg4win (Windows users)](https://www.gpg4win.org/)
+- [Public key](pub-key.asc)
+- The hash from the release `lockfs.sha256`
+- The signature file `lockfs.sha256.asc`
+
+The hash file is signed instead of the package itself to make signing and verification faster. Since hash collisions are extremely unlikely, verifying the signed hash ensures the package comes from the owner of the private key.
+
+These are the commands to use in your terminal/command prompt
+
+- `gpg --import pub-key.asc`
+- `gpg --verify lockfs.sha256.asc`
+
+If it passes, it should show something like this:
+
+```
+gpg: assuming signed data in 'lockfs.sha256'
+gpg: Signature made Wed 03 Mar 2026 10:00:00 AM UTC
+gpg:                using EDDSA key 6C316AD1B314BA1BBB360D2370EC4ECD1B3B0D16
+gpg: Good signature from "0xGhostInAJar (LockFS)" [ultimate]
+```
+
+The last 2 lines are important as it tells you if the signature is correct and if it has been signed by the correct key
 
 # Release Cycle
 
