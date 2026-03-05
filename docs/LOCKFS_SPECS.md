@@ -4,12 +4,12 @@ This documentation will list the specifications of LockFS
 
 ## Contents
 
-- [Fundamental Architecture](Fundamental-Architecture)
-- [File Format For LockFS](File-Format-For-LockFS)
-- [Current Algorithm Values](Current-Algorithm-Values)
-- [Byte Allocations For LockFS File Format](Byte-Allocations-For-LockFS-File-Format)
-  - [Header Parameters](Header-Parameters)
-  - [Length-Constrained Parameters](Length-Constrained-Parameters)
+- [Fundamental Architecture](#Fundamental-Architecture)
+- [File Format For LockFS](#File-Format-For-LockFS)
+- [Current Algorithm Values](#Current-Algorithm-Values)
+- [Byte Allocations For LockFS File Format](#Byte-Allocations-For-LockFS-File-Format)
+  - [Header Parameters](#Header-Parameters)
+  - [Length-Constrained Parameters](#Length-Constrained-Parameters)
   
 ## Fundamental Architecture
 

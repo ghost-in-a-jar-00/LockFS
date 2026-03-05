@@ -4,15 +4,15 @@ This documentation explains how LockFS is designed
 
 ## Contents
 
-- [Purpose of LockFS](Purpose-of-LockFS)
-- [Target Audience](Target-Audience)
-- [Minimum Specs](Minimum-Specs)
-- [Content Privacy](Content-Privacy)
-- [Language Selection](Language-Selection)
-- [Dependency Usage](Dependency-Usage)
-- [Algorithm Selection](Algorithm-Selection)
-- [LockFS File Format Versioning](LockFS-File-Format-Versioning)
-- [Known Limitations](Known-Limitations)
+- [Purpose of LockFS](#Purpose-of-LockFS)
+- [Target Audience](#Target-Audience)
+- [Minimum Specs](#Minimum-Specs)
+- [Content Privacy](#Content-Privacy)
+- [Language Selection](#Language-Selection)
+- [Dependency Usage](#Dependency-Usage)
+- [Algorithm Selection](#Algorithm-Selection)
+- [LockFS File Format Versioning](#LockFS-File-Format-Versioning)
+- [Known Limitations](#Known-Limitations)
 
 ## Purpose of LockFS
 
