@@ -1,3 +1,9 @@
+2.0.1-dev.1
+
+- Increased chunk size from 4 KiB to 128 KiB 
+
+---
+
 2.0.0-dev.2
 
 - Futureproofing of file data by writing parameters to the file

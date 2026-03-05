@@ -64,9 +64,9 @@ public class SecureTools{
     private static final int IV_LENGTH = 12;
     private static final int KEY_SIZE = 256;
     private static final int TAG_LENGTH = 128;
-    private static final int CHUNK_SIZE = 4096;
+    private static final int CHUNK_SIZE = 128 * 1024;
     
-    private static final int A2ID_MEMORY = 65536;
+    private static final int A2ID_MEMORY = 64 * 1024;
     private static final int A2ID_THREADS = 2;
     private static final int A2ID_ITERATIONS = 4;
     
