@@ -70,10 +70,10 @@ This is how a LockFS encrypted `.lkx` file would look like according to their ve
   - IV Length: 12 bytes
   - Key Size: 32 bytes (256 bits)
   - Tag Length: 16 bytes (128 bits)
-  - Chunk Size: 4 KiB (4096 bytes)
+  - Chunk Size: 128 KiB (131072 bytes)
 
 - Parameters (KDF):
-  - Memory: 64 MB (65536 KB)
+  - Memory: 64 MiB (65536 KiB)
   - Parallelism: 2
   - Iterations: 4
 
@@ -103,4 +103,4 @@ The following parameters are stored in the **LockFS file header** with fixed byt
 
 | Field | Size | Type | Description |
 |------|------|------|-------------|
-| Path Length | 2 bytes | Unsigned integer (big-endian) | Length of the encrypted path (maximum **65535 bytes**) |
+| Path Length | 2 bytes | `uint16` (BE) | Length of the encrypted path (maximum **65535 bytes**) |

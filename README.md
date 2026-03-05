@@ -14,7 +14,7 @@
 
 1. Download latest `lockfs.zip` from these releases:
   - *Current General Release*: [2.0.0](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0)
-  - *Current Development Release (Pre-Release)*: [2.0.0-dev.2](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.0-dev.2) (**may contain new features and bugs**)
+  - *Current Development Release (Pre-Release)*: [2.0.1-dev.1](https://github.com/ghost-in-a-jar-00/LockFS/releases/tag/2.0.1-dev.1) (**may contain new features and bugs**)
   
 2. Unzip the `lockfs.zip` and open the `lockfs` folder
 3. Open a terminal or command prompt
@@ -126,7 +126,7 @@ The following scenarios are outside the protection scope of LockFS:
 
 These are the PGP keys for verifying that the releases are authentic. You can get a copy of the keys [here](pub-keys.asc)
 
-0xGhostInAJar `6C31 6AD1 B314 BA1B BB36  0D23 70EC 4ECD 1B3B 0D16`
+**0xGhostInAJar:** `6C31 6AD1 B314 BA1B BB36  0D23 70EC 4ECD 1B3B 0D16`
 
 ## Instructions To Verify Releases
 

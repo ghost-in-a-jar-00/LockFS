@@ -80,7 +80,7 @@ LockFS file formats are designed to change only when the type of encryption algo
 
 Some of the weaknesses of LockFS are known during the planning phase
 
-- Unencrypted texts and folders get deleted, not wiped
+- Unencrypted files and folders get deleted, not wiped
   - This choice was made to balance speed and security
   - Unlikely to be recovered under normal use
   - If this is a concern, periodic disk wiping should be done with preventive measures like enabling disk encryption and `fstrim` or its equivalent
