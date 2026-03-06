@@ -8,7 +8,7 @@
 
 **Development Release**
 
-`2.0.1-dev.1`
+`2.0.1-dev.2`
 
 ## Reporting a Vulnerability
 

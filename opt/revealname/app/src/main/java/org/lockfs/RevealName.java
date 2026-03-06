@@ -9,7 +9,6 @@ import lib.SecureTools;
 import lib.FileOp;
 import java.io.File;
 import java.nio.file.Path;
-import java.io.IOException;
 
 public class RevealName{
     private static final char SEPARATOR = ','; //For file usage, CSV format (name,alias)
@@ -23,7 +22,7 @@ public class RevealName{
         GuiTools.showText(text);
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args){
         char[] password = GuiTools.getDecrypt();
         
         String dirTask = "Choose Vault";
@@ -46,9 +45,13 @@ public class RevealName{
                     System.exit(1);
                 }
                 
+            }else{
+                System.err.println("Unable to check vault name: " + vaultPath.getPath() + " does not contain a " + DB_EXT_NAME + " file");
+                System.exit(1);
             }
         }else{
-            throw new IOException(vaultPath.getPath() + " not found");
+            System.err.println(vaultPath.getPath() + " not found");
+            System.exit(1);
         }
     }
 }

@@ -26,3 +26,7 @@
   - E.g. `*Bug Fix: <bug to be fixed>*`
 - Explain what you have improved on, added and why
 - Wait for review
+
+## Contributions
+
+@hakavlad - Increasing chunk size
