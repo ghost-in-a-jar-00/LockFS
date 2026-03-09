@@ -2,7 +2,7 @@
 
 **LockFS** is a simple, flexible app for encrypting files individually, keeping your data secure and your vaults manageable
 
-**Note:** LockFS is currently in active development. Core functionality, including encryption, may have bugs. Use at your own risk.
+**Status:** LockFS is stable, but the cryptography not yet been independently audited. Use backups for sensitive files
 
 ## Requirements
 
@@ -75,8 +75,8 @@ Traditional vault systems often require compressing or archiving files before en
 
 **Inside `lockfs.zip`**
 
-- `lock.jar` - Encrypts Files
-- `unlock.jar` - Decrypts Files
+- `lock.jar` - Encrypts files
+- `unlock.jar` - Decrypts files
 
 ## Optional Tools
 
