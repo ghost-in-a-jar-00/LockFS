@@ -55,8 +55,7 @@ This is how a LockFS encrypted `.lkx` file would look like according to their ve
 [IV for Data][Data Chunk (ENCRYPTED)][Tag]
 ```
 
-**Note:** IV and Tag for data is written per chunk
-**Note:** Some of these parameters may be omitted or customized for certain programs (e.g. vault metadata encryption/decryption which does not use chunk size to process encrypted data)
+**Note:** IV and authentication tag for data is written per chunk and some of these parameters may be omitted or customized for certain programs (e.g. vault metadata encryption/decryption which does not use chunk size to process encrypted data)
 
 > The file format version will only change if there is a modification in the type of encryption algo and its necessary components like KDF algo for example
 

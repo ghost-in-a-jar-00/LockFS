@@ -1,3 +1,4 @@
+chmod +x ./gradlew
 ./gradlew shadowJar
 
 cp app/build/libs/app-all.jar .
