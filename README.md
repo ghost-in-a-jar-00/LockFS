@@ -2,8 +2,6 @@
 
 **LockFS** is a simple, flexible app for encrypting files individually, keeping your data secure and your vaults manageable
 
-**Status:** LockFS is stable, but the cryptography not yet been independently audited. Use backups for sensitive files
-
 ## Requirements
 
 - [Java](https://jdk.java.net/25/) - **The JVM must be installed, at least Java 21**
